@@ -1,4 +1,4 @@
-# Eva Pharma Search and Analytics
+# Eva cosmetics Search and Analytics
 
 A team portfolio project that combines a React search interface, a Python search backend, product scraping assets, and reusable analytics scripts for EVA Pharma related datasets.
 
