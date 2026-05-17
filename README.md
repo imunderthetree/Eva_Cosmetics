@@ -134,7 +134,7 @@ When `npm run dev:backend` is running, the backend exposes:
 Included datasets:
 
 - `eva_products.csv` for product search.
-- `eva_group_emails.csv` for the employee email ML demo.
+- `eva_group_emails.csv` for the employee email ML demo. This email dataset is fake/synthetic and does not contain real employee emails.
 - TikTok CSV exports inside `tiktok scraper/`.
 
 Generated files are intentionally excluded from Git:
@@ -148,6 +148,8 @@ Generated files are intentionally excluded from Git:
 ## Important Note About the Employee ML Demo
 
 `analysis/employee_raise_model.py` is a portfolio and learning demonstration. It uses engineered signals from sample email data to show a machine learning workflow, including feature engineering, clustering, regression, scoring, and chart generation.
+
+The email data used in this demo is fake/synthetic and was created for project demonstration purposes only.
 
 It should not be used as a real HR decision system. Real compensation or promotion decisions require validated criteria, human review, privacy controls, bias testing, and organizational governance.
 
