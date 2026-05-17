@@ -15,16 +15,16 @@ interface SearchOptionsPanelProps {
 }
 
 export const defaultSearchOptions: SearchOptions = {
-  topK: 10,
+  topK: 25,
   useSynonyms: true,
   useFeedback: true,
-  useEmbeddings: false,
+  useEmbeddings: true,
   embeddingBackend: 'bert',
 };
 
 export function SearchOptionsPanel({ options, onChange, isLoading }: SearchOptionsPanelProps) {
   const updateOption = <K extends keyof SearchOptions>(key: K, value: SearchOptions[K]) => {
-    onChange({ ...options, [key]: value });
+    onChange({ ...options, [key]: value, useEmbeddings: true, embeddingBackend: 'bert' });
   };
 
   return (
@@ -37,14 +37,15 @@ export function SearchOptionsPanel({ options, onChange, isLoading }: SearchOptio
           <input
             type="number"
             min={1}
-            max={20}
+            max={50}
             value={options.topK}
             disabled={isLoading}
             onChange={(event) =>
-              updateOption('topK', Math.max(1, Math.min(20, Number(event.target.value) || 1)))
+              updateOption('topK', Math.max(1, Math.min(50, Number(event.target.value) || 1)))
             }
             className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-[#1a5f3b] focus:ring-2 focus:ring-[#1a5f3b]/20 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-[#2d8a54]"
           />
+          <span className="mt-1 block text-xs text-gray-500 dark:text-gray-400">Retrieve up to 50 ranked products.</span>
         </label>
 
         <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-3 dark:border-gray-700">
@@ -69,32 +70,18 @@ export function SearchOptionsPanel({ options, onChange, isLoading }: SearchOptio
           <span className="text-sm text-gray-700 dark:text-gray-300">Relevance feedback</span>
         </label>
 
-        <label className="flex items-center gap-3 rounded-lg border border-gray-200 px-3 py-3 dark:border-gray-700">
+        <div className="flex items-center gap-3 rounded-lg border border-[#1a5f3b]/20 bg-[#1a5f3b]/5 px-3 py-3 dark:border-[#2d8a54]/30 dark:bg-[#2d8a54]/10">
           <input
             type="checkbox"
-            checked={options.useEmbeddings}
-            disabled={isLoading}
-            onChange={(event) => updateOption('useEmbeddings', event.target.checked)}
+            checked
+            disabled
             className="h-4 w-4 rounded accent-[#1a5f3b] dark:accent-[#2d8a54]"
           />
-          <span className="text-sm text-gray-700 dark:text-gray-300">Embedding expansion</span>
-        </label>
-
-        {options.useEmbeddings && (
-          <label className="block">
-            <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">Embedding backend</span>
-            <select
-              value={options.embeddingBackend}
-              disabled={isLoading}
-              onChange={(event) => updateOption('embeddingBackend', event.target.value as EmbeddingBackend)}
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-[#1a5f3b] focus:ring-2 focus:ring-[#1a5f3b]/20 disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900 dark:text-white dark:focus:border-[#2d8a54]"
-            >
-              <option value="bert">BERT</option>
-              <option value="elmo">ELMo</option>
-              <option value="rnn">RNN</option>
-            </select>
-          </label>
-        )}
+          <div>
+            <span className="block text-sm font-medium text-[#1a5f3b] dark:text-[#8be2ab]">AI expansion enabled</span>
+            <span className="block text-xs text-gray-500 dark:text-gray-400">Vector query expansion is always applied.</span>
+          </div>
+        </div>
       </div>
     </aside>
   );

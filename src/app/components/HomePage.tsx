@@ -18,7 +18,7 @@ export function HomePage({ query, onQueryChange, onSearch }: HomePageProps) {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-white to-gray-50 px-6 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 px-6 dark:from-gray-900 dark:to-gray-800">
       <button
         onClick={(e) => toggleTheme(e)}
         className="fixed right-8 top-8 rounded-full p-3 text-gray-700 transition-all hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
@@ -27,7 +27,7 @@ export function HomePage({ query, onQueryChange, onSearch }: HomePageProps) {
         {theme === 'light' ? <Moon className="h-6 w-6" /> : <Sun className="h-6 w-6" />}
       </button>
 
-      <div className="w-full max-w-2xl text-center">
+      <div className="mx-auto flex min-h-screen w-full max-w-2xl flex-col items-center justify-center text-center">
         <div className="mb-12 flex flex-col items-center justify-center gap-3">
           <img src={logo} alt="Eva Cosmetics" className="h-24" />
           <h1 className="text-5xl tracking-wide text-gray-900 dark:text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -36,7 +36,7 @@ export function HomePage({ query, onQueryChange, onSearch }: HomePageProps) {
         </div>
 
         <p className="mb-10 text-lg text-gray-600 dark:text-gray-400" style={{ fontFamily: "'Montserrat', sans-serif" }}>
-          Search across the Eva product catalog using the notebook ranking pipeline
+          Search across the Eva Cosmetics product catalog with AI-assisted query expansion and TF-IDF ranking.
         </p>
 
         <div className="mb-8">
@@ -78,6 +78,45 @@ export function HomePage({ query, onQueryChange, onSearch }: HomePageProps) {
           </button>
         </div>
       </div>
+
+      <section id="about" className="mx-auto w-full max-w-6xl py-16">
+        <div className="grid gap-10 border-t border-gray-200 pt-12 dark:border-gray-700 lg:grid-cols-[1.2fr_0.8fr]">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-wider text-[#1a5f3b] dark:text-[#8be2ab]">About the project</p>
+            <h2 className="mb-5 text-3xl font-semibold text-gray-900 dark:text-white">Eva Cosmetics Search and Analytics</h2>
+            <p className="max-w-3xl text-base leading-7 text-gray-600 dark:text-gray-300">
+              This team project builds a searchable product experience for Eva Cosmetics data. The app combines a React
+              frontend with a Python search backend that cleans product text, builds a TF-IDF index, expands user
+              queries with synonym, feedback, and vector signals, then returns ranked product results through API routes
+              ready for Vercel deployment.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Team</h3>
+              <div className="space-y-3 text-gray-800 dark:text-gray-100">
+                <div className="flex items-center justify-between gap-4">
+                  <span>Yusuf Alsaied</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">202402431</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span>Rawan Ibrahim</span>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">202401352</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Flow</h3>
+              <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">
+                Product CSV data is indexed by the backend, searched through API routes, and displayed in the React UI
+                with ranked results, autocomplete suggestions, and always-on AI expansion.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

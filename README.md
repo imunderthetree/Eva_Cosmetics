@@ -32,6 +32,7 @@ A team portfolio project that combines a React search interface, a Python search
 |-- analysis/
 |   |-- employee_raise_model.py      # Employee email ML pipeline
 |   `-- tiktok_comparison.py         # TikTok account comparison
+|-- api/                             # Vercel Python serverless API routes
 |-- backend/
 |   |-- eva_query_processing.py      # Product search and query expansion logic
 |   `-- search_api.py                # HTTP API for the React frontend
@@ -42,7 +43,9 @@ A team portfolio project that combines a React search interface, a Python search
 |-- eva_group_emails.csv             # Employee email analysis dataset
 |-- eva_products.csv                 # Product search dataset
 |-- package.json                     # Frontend scripts and dependencies
-`-- requirements.txt                 # Python dependencies
+|-- requirements.txt                 # Vercel API Python dependencies
+|-- requirements-analysis.txt        # Optional analytics dependencies
+`-- vercel.json                      # Vercel deployment configuration
 ```
 
 ## Requirements
@@ -57,10 +60,16 @@ Install frontend dependencies:
 npm install
 ```
 
-Install Python dependencies:
+Install Python dependencies for the search API:
 
 ```bash
 pip install -r requirements.txt
+```
+
+Install optional analytics dependencies if you want to run the employee and TikTok analysis scripts:
+
+```bash
+pip install -r requirements-analysis.txt
 ```
 
 ## Run the Web App
@@ -82,6 +91,29 @@ The frontend runs through Vite and proxies `/api` requests to:
 ```text
 http://127.0.0.1:8000
 ```
+
+For Vercel, the `/api` routes are served by Python functions in the `api/` folder, so no separate backend server is required after deployment.
+
+## Deploy on Vercel
+
+This repository is ready for Vercel deployment.
+
+Recommended Vercel settings:
+
+| Setting | Value |
+| --- | --- |
+| Framework preset | Vite |
+| Build command | `npm run build` |
+| Output directory | `dist` |
+| Install command | `npm install` |
+
+`vercel.json` keeps the Vite app working as a single-page app and exposes these serverless API routes:
+
+- `/api/health`
+- `/api/search`
+- `/api/suggest`
+
+The deployed search uses the same `/api` paths as local development.
 
 ## Product Search Commands
 
@@ -128,6 +160,8 @@ When `npm run dev:backend` is running, the backend exposes:
 | `GET /api/health` | Backend health check and index size |
 | `GET /api/search?q=<query>` | Product search with query expansion |
 | `GET /api/suggest?q=<prefix>` | Autocomplete suggestions |
+
+On Vercel, these endpoints are handled by the Python functions in `api/`.
 
 ## Data and Outputs
 

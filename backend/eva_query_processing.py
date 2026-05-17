@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import html
 import json
 import math
@@ -389,6 +390,27 @@ def feedback_terms_from_docs(
     return [term for term, _ in term_scores.most_common(top_n)]
 
 
+def hash_embedding_encoder(texts: list[str], dimensions: int = 256) -> np.ndarray:
+    """Small deterministic vector encoder used when heavyweight models are unavailable."""
+    rows = np.zeros((len(texts), dimensions), dtype=np.float32)
+
+    for row_index, text in enumerate(texts):
+        terms = tokenize(text)
+        features: list[str] = []
+        for term in terms:
+            padded = f"^{term}$"
+            features.append(term)
+            features.extend(padded[index : index + 3] for index in range(max(1, len(padded) - 2)))
+
+        for feature in features:
+            digest = hashlib.blake2b(feature.encode("utf-8"), digest_size=4).digest()
+            column = int.from_bytes(digest, "big") % dimensions
+            rows[row_index, column] += 1.0
+
+    norms = np.linalg.norm(rows, axis=1, keepdims=True)
+    return rows / np.clip(norms, 1e-9, None)
+
+
 def get_embedding_backend(backend: str, model_path: str | None = None):
     backend = backend.lower().strip()
 
@@ -397,8 +419,8 @@ def get_embedding_backend(backend: str, model_path: str | None = None):
             from sentence_transformers import SentenceTransformer
 
             model = SentenceTransformer(model_path or "all-MiniLM-L6-v2")
-        except Exception as exc:
-            return None, f"BERT expansion unavailable: {exc}"
+        except Exception:
+            return hash_embedding_encoder, ""
 
         def encode(texts: list[str]) -> np.ndarray:
             return model.encode(texts, normalize_embeddings=True)

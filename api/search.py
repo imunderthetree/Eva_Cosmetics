@@ -1,11 +1,17 @@
 from __future__ import annotations
 
-import argparse
 import json
+import sys
 from http import HTTPStatus
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from http.server import BaseHTTPRequestHandler
+from pathlib import Path
 from time import perf_counter
 from urllib.parse import parse_qs, urlparse
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+BACKEND_DIR = ROOT_DIR / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 import eva_query_processing as search_backend
 
@@ -36,52 +42,18 @@ def parse_float(value: str | None, default: float, minimum: float, maximum: floa
     return max(minimum, min(maximum, parsed))
 
 
-class SearchRequestHandler(BaseHTTPRequestHandler):
-    server_version = "EvaSearchAPI/1.0"
-
-    def log_message(self, format: str, *args) -> None:  # noqa: A003
-        return
-
-    def end_headers(self) -> None:
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
-        super().end_headers()
-
-    def do_OPTIONS(self) -> None:  # noqa: N802
+class handler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self) -> None:
         self.send_response(HTTPStatus.NO_CONTENT)
+        self._send_cors_headers()
         self.end_headers()
 
-    def do_GET(self) -> None:  # noqa: N802
-        parsed = urlparse(self.path)
-
-        if parsed.path == "/api/health":
-            self.write_json(
-                HTTPStatus.OK,
-                {
-                    "status": "ok",
-                    "documents": len(search_backend.docs),
-                    "vocabulary_terms": len(search_backend.VOCAB),
-                },
-            )
-            return
-
-        if parsed.path == "/api/search":
-            self.handle_search(parsed.query)
-            return
-
-        if parsed.path == "/api/suggest":
-            self.handle_suggest(parsed.query)
-            return
-
-        self.write_json(HTTPStatus.NOT_FOUND, {"error": "Route not found."})
-
-    def handle_search(self, raw_query: str) -> None:
-        params = parse_qs(raw_query)
+    def do_GET(self) -> None:
+        params = parse_qs(urlparse(self.path).query)
         query = (params.get("q") or [""])[0].strip()
 
         if not query:
-            self.write_json(HTTPStatus.BAD_REQUEST, {"error": "Missing required query parameter: q"})
+            self._write_json(HTTPStatus.BAD_REQUEST, {"error": "Missing required query parameter: q"})
             return
 
         top_k = parse_int((params.get("top_k") or [None])[0], default=25, minimum=1, maximum=50)
@@ -90,7 +62,6 @@ class SearchRequestHandler(BaseHTTPRequestHandler):
         embedding_top_n = parse_int((params.get("embedding_top_n") or [None])[0], default=5, minimum=1, maximum=20)
         use_synonyms = parse_bool((params.get("use_synonyms") or [None])[0], default=True)
         use_feedback = parse_bool((params.get("use_feedback") or [None])[0], default=True)
-        use_embeddings = True
         embedding_backend = (params.get("embedding_backend") or [search_backend.EMBEDDING_BACKEND])[0]
         embedding_model_path = (params.get("embedding_model_path") or [None])[0]
         embedding_min_sim = parse_float(
@@ -108,7 +79,7 @@ class SearchRequestHandler(BaseHTTPRequestHandler):
             feedback_terms=feedback_terms,
             use_synonyms=use_synonyms,
             use_feedback=use_feedback,
-            use_embeddings=use_embeddings,
+            use_embeddings=True,
             embedding_backend=embedding_backend,
             embedding_model_path=embedding_model_path,
             embedding_top_n=embedding_top_n,
@@ -117,7 +88,7 @@ class SearchRequestHandler(BaseHTTPRequestHandler):
         results = search_payload["results"]
         latency_ms = round((perf_counter() - started_at) * 1000, 2)
 
-        self.write_json(
+        self._write_json(
             HTTPStatus.OK,
             {
                 "query": query,
@@ -129,7 +100,7 @@ class SearchRequestHandler(BaseHTTPRequestHandler):
                     "feedback_terms": feedback_terms,
                     "use_synonyms": use_synonyms,
                     "use_feedback": use_feedback,
-                    "use_embeddings": use_embeddings,
+                    "use_embeddings": True,
                     "embedding_backend": embedding_backend,
                     "embedding_model_path": embedding_model_path,
                     "embedding_top_n": embedding_top_n,
@@ -140,42 +111,16 @@ class SearchRequestHandler(BaseHTTPRequestHandler):
             },
         )
 
-    def handle_suggest(self, raw_query: str) -> None:
-        params = parse_qs(raw_query)
-        query = (params.get("q") or [""])[0].strip()
-        limit = parse_int((params.get("limit") or [None])[0], default=8, minimum=1, maximum=12)
+    def _send_cors_headers(self) -> None:
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
-        suggestions = search_backend.suggest_queries(query, limit=limit)
-        self.write_json(
-            HTTPStatus.OK,
-            {
-                "query": query,
-                "suggestions": suggestions,
-            },
-        )
-
-    def write_json(self, status: HTTPStatus, payload: dict) -> None:
+    def _write_json(self, status: HTTPStatus, payload: dict) -> None:
         body = json.dumps(payload, ensure_ascii=True).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
+        self._send_cors_headers()
         self.end_headers()
         self.wfile.write(body)
-
-
-def serve(host: str, port: int) -> None:
-    server = ThreadingHTTPServer((host, port), SearchRequestHandler)
-    print(f"Eva search API listening on http://{host}:{port}")
-    server.serve_forever()
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="HTTP API for the Eva notebook search pipeline.")
-    parser.add_argument("--host", default="127.0.0.1")
-    parser.add_argument("--port", type=int, default=8000)
-    args = parser.parse_args()
-    serve(args.host, args.port)
-
-
-if __name__ == "__main__":
-    main()
